@@ -1,14 +1,23 @@
-#build react app
-FROM node:22
+# Stage 1: Build app
+FROM node:22-alpine AS builder
 
-WORKDIR /calculatorApp
+WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
-EXPOSE 3000
+RUN npm run build
 
-CMD ["npm", "start"]
+
+# Stage 2: Production with NGINX
+FROM nginx:alpine AS prod
+
+# Copy built frontend files
+COPY --from=builder /app/build /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
